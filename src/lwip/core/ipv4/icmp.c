@@ -65,6 +65,14 @@
 /* The amount of data from the original packet to return in a dest-unreachable */
 #define ICMP_DEST_UNREACH_DATASIZE 8
 
+static struct icmp_pcb icmp_ping_pcb = {0};
+
+void set_icmp_ping_pcb(icmp_recv_fn recv, void *recv_args) 
+{
+  icmp_ping_pcb.recv = recv;
+  icmp_ping_pcb.recv_args = recv_args;
+}
+
 static void icmp_send_response(struct pbuf *p, u8_t type, u8_t code);
 
 /**
@@ -101,8 +109,8 @@ icmp_input(struct pbuf *p, struct netif *inp)
     LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: short ICMP (%"U16_F" bytes) received\n", p->tot_len));
     goto lenerr;
   }
-
   type = *((u8_t *)p->payload);
+  
 #ifdef LWIP_DEBUG
   code = *(((u8_t *)p->payload) + 1);
   /* if debug is enabled but debug statement below is somehow disabled: */
@@ -141,6 +149,12 @@ icmp_input(struct pbuf *p, struct netif *inp)
       if (p->tot_len < sizeof(struct icmp_echo_hdr)) {
         LWIP_DEBUGF(ICMP_DEBUG, ("icmp_input: bad ICMP echo received\n"));
         goto lenerr;
+      }
+      if (icmp_ping_pcb.recv != NULL) {
+        src = ip4_current_src_addr();
+        icmp_ping_pcb.recv(icmp_ping_pcb.recv_args, &icmp_ping_pcb, p, src, ip4_current_dest_addr(), type, code);
+        pbuf_free(p);
+        return;
       }
 #if CHECKSUM_CHECK_ICMP
       IF__NETIF_CHECKSUM_ENABLED(inp, NETIF_CHECKSUM_CHECK_ICMP) {

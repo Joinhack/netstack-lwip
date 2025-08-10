@@ -4,6 +4,35 @@ use super::lwip::*;
 
 // FIXME Need to verify the byte order of Ipv6 address in lwIP.
 
+pub fn to_addr(addr: &ip_addr_t) -> IpAddr {
+    unsafe {
+        match addr.type_ {
+            // Ipv4
+            0 => IpAddr::V4(addr.u_addr.ip4.addr.to_ne_bytes().into()),
+            // Ipv6
+            6 => {
+                let addr = addr.u_addr.ip6.addr;
+                let p0 = addr[0].to_ne_bytes();
+                let p1 = addr[1].to_ne_bytes();
+                let p2 = addr[2].to_ne_bytes();
+                let p3 = addr[3].to_ne_bytes();
+                let mut p = [0u8; 16];
+                (&mut p[0..4]).copy_from_slice(&p0);
+                (&mut p[4..8]).copy_from_slice(&p1);
+                (&mut p[8..12]).copy_from_slice(&p2);
+                (&mut p[12..16]).copy_from_slice(&p3);
+                let addr = Ipv6Addr::from(p);
+                IpAddr::V6(addr)
+            }
+            // FIXME Ipv4+Ipv6 (dual-stack)
+            _ => {
+                log::warn!("Unsupported IP address type");
+                IpAddr::V4(Ipv4Addr::UNSPECIFIED)
+            }
+        }
+    }
+}
+
 pub fn to_socket_addr(addr: &ip_addr_t, port: u16_t) -> SocketAddr {
     unsafe {
         match addr.type_ {

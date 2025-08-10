@@ -77,6 +77,18 @@ enum icmp_te_type {
 
 #if LWIP_IPV4 && LWIP_ICMP /* don't build if not configured for use in lwipopts.h */
 
+typedef void (*icmp_recv_fn)(void *arg, struct icmp_pcb *pcb, struct pbuf *p,
+    const ip_addr_t *addr, const ip_addr_t *dest_addr, u8_t type, u8_t code);
+
+struct icmp_pcb {
+  void* recv_args;  /**< user-supplied argument for the receive callback */
+  icmp_recv_fn recv; /**< receive callback function */
+};
+
+void set_icmp_ping_pcb(icmp_recv_fn recv, void *recv_args);
+
+err_t icmp_sendto(struct pbuf *pbuf, const ip_addr_t *src, const ip_addr_t *dest);
+
 void icmp_input(struct pbuf *p, struct netif *inp);
 void icmp_dest_unreach(struct pbuf *p, enum icmp_dur_type t);
 void icmp_time_exceeded(struct pbuf *p, enum icmp_te_type t);

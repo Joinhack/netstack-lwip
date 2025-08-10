@@ -2,6 +2,7 @@ mod lwip;
 mod mutex;
 mod output;
 mod stack;
+mod icmp;
 mod tcp_listener;
 mod tcp_stream;
 mod tcp_stream_context;
