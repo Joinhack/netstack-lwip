@@ -67,10 +67,15 @@
 
 static struct icmp_pcb icmp_ping_pcb = {0};
 
-void set_icmp_ping_pcb(icmp_recv_fn recv, void *recv_args) 
+void set_icmp_ping_pcb(icmp_recv_fn recv, void *recv_args)
 {
   icmp_ping_pcb.recv = recv;
   icmp_ping_pcb.recv_args = recv_args;
+}
+
+err_t icmpping_sendto(struct pbuf *p, const ip_addr_t *src, const ip_addr_t *dest)
+{
+  return ERR_OK;
 }
 
 static void icmp_send_response(struct pbuf *p, u8_t type, u8_t code);
@@ -110,7 +115,7 @@ icmp_input(struct pbuf *p, struct netif *inp)
     goto lenerr;
   }
   type = *((u8_t *)p->payload);
-  
+
 #ifdef LWIP_DEBUG
   code = *(((u8_t *)p->payload) + 1);
   /* if debug is enabled but debug statement below is somehow disabled: */
